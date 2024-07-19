@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaomoji</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; text-align: center; }
+        #game-container { margin-top: 20px; }
+        button { margin: 5px; padding: 10px; }
+        #result, #score, #lives { margin-top: 20px; font-weight: bold; }
+        #kaomoji { font-size: 24px; margin: 20px 0; }
+        .emotion-btn { background-color: #4CAF50; border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 5px; }
+        #game-over, #game-won { display: none; margin-top: 20px; font-size: 24px; color: #ff4500; }
+        #author { font-style: italic; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Kaomoji</h1>
+    <p id="author">Written by Victor Gold</p>
+    <div id="game-container">
+        <p id="kaomoji"></p>
+        <div id="buttons"></div>
+    </div>
+    <p id="result"></p>
+    <p id="score"></p>
+    <p id="lives"></p>
+    <div id="game-over">Game Over! You've run out of lives.</div>
+    <div id="game-won">Congratulations! You've won the game!</div>
+
+    <script>
+        const kaomoji_dict = {
+            "happy": ["(´･ω･`)", "(≧▽≦)", "(^▽^)", "(*^‿^*)", "ヽ(♡‿♡)ノ", "(⌒‿⌒)", "(*¯︶¯*)", "ヽ(•‿•)ノ"],
+            "sad": ["(´；ω；`)", "(╥_╥)", "(T_T)", "(；へ：)", "(╯︵╰,)", "(っ˘̩╭╮˘̩)っ", "( ˘･_･˘)", "ಥ_ಥ"],
+            "angry": ["(╬ಠ益ಠ)", "(>_<)", "(눈_눈)", "(-_-｡)", "ヽ(`⌒´メ)ノ", "ᕙ(⇀‸↼‶)ᕗ", "(╬ Ò﹏Ó)"],
+            "confused": ["(・・ ) ?", "(￣ω￣;)", "(-_-;)・・・", "(≧ヘ≦　)", "┐('～`;)┌", "(・_・ヾ", "｢(ﾟﾍﾟ)"],
+            "driving": ["ᕦ(ò_óˇ)ᕤ", "(づ￣ ³￣)づ", "┌(┌^o^)┐", "ε=ε=ε=ε=┌(;￣▽￣)┘"],
+            "birthday": ["♪ヽ(^ᴗ^)ノ♪", "(≧◡≦)", "ヾ(^▽^*)))", "☆*:.｡.o(≧▽≦)o.｡.:*☆"],
+            "singing": ["ヾ(⌐■_■)ノ♪", "ヘ(^_^ヘ)", "♪┗(＾0＾)┓♪", "♪(┌・。・)┌"],
+            "surprised": ["(°o°)", "(⊙_⊙)", "(°ロ°) !", "(⊙⊙)(☉_☉)", "щ(゜ロ゜щ)", "(ﾟﾛﾟ)", "(⊙⊙)(☉_☉)"],
+            "love": ["(♡‿♡)", "(๑♡⌓♡๑)", "(♥ω♥*)", "(´∀｀)♡", "( ˘ ³˘)♥", "(◍•ᴗ•◍)❤"],
+            "tired": ["(´-ω-`)", "( ´△｀)", "(￣ω￣)", "(≧ヘ≦　)", "_(:3 」∠)_", "(;-_-)", "( ˘ω˘ )"],
+            "mischievous": ["(・`ω´・)", "ψ(｀∇´)ψ", "(｡•̀ᴗ-)✧", "( ￣▼￣)", "(•̀ᴗ•́)و", "(*≧▽≦)"],
+            "excited": ["\\(^o^)/", "ヽ(^o^)丿", "٩(◕‿◕｡)۶", "ヽ(＾Д＾)ﾉ", "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "\\(★ω★)/"]
+        };
+
+        let currentEmotion;
+        let score = 0;
+        let questionsAsked = 0;
+        let lives = 3;
+        const totalQuestions = 20;
+        const winningScore = 15;
+
+        function startGame() {
+            if (questionsAsked >= totalQuestions || lives <= 0) {
+                endGame();
+                return;
+            }
+
+            const emotions = Object.keys(kaomoji_dict);
+            currentEmotion = emotions[Math.floor(Math.random() * emotions.length)];
+            const kaomoji = kaomoji_dict[currentEmotion][Math.floor(Math.random() * kaomoji_dict[currentEmotion].length)];
+
+            document.getElementById('kaomoji').textContent = kaomoji;
+            document.getElementById('result').textContent = '';
+
+            // Select 3 random incorrect emotions
+            const incorrectEmotions = emotions.filter(e => e !== currentEmotion);
+            const shuffledIncorrect = incorrectEmotions.sort(() => 0.5 - Math.random());
+            const selectedEmotions = [currentEmotion, ...shuffledIncorrect.slice(0, 3)];
+            
+            // Shuffle the selected emotions
+            const shuffledEmotions = selectedEmotions.sort(() => 0.5 - Math.random());
+
+            const buttonsHtml = shuffledEmotions.map(emotion => 
+                `<button class="emotion-btn" onclick="checkAnswer('${emotion}')">${emotion}</button>`
+            ).join('');
+            document.getElementById('buttons').innerHTML = buttonsHtml;
+            updateStats();
+        }
+
+        function checkAnswer(selectedEmotion) {
+            questionsAsked++;
+            if (selectedEmotion === currentEmotion) {
+                score++;
+                document.getElementById('result').textContent = 'Correct!';
+            } else {
+                lives--;
+                document.getElementById('result').textContent = `Wrong. It was ${currentEmotion}.`;
+            }
+            updateStats();
+            setTimeout(startGame, 1500);
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = `Score: ${score}/${questionsAsked}`;
+            document.getElementById('lives').textContent = `Lives: ${'❤️'.repeat(lives)}`;
+        }
+
+        function endGame() {
+            document.getElementById('buttons').innerHTML = '';
+            document.getElementById('kaomoji').textContent = '';
+            if (lives <= 0) {
+                document.getElementById('game-over').style.display = 'block';
+            } else if (score >= winningScore) {
+                document.getElementById('game-won').style.display = 'block';
+            }
+            document.getElementById('buttons').innerHTML = '<button onclick="resetGame()">Play Again</button>';
+        }
+
+        function resetGame() {
+            score = 0;
+            questionsAsked = 0;
+            lives = 3;
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('game-won').style.display = 'none';
+            startGame();
+        }
+
+        startGame();
+    </script>
+</body>
+</html>

@@ -3,30 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kaomoji</title>
+    <title>Kaomoji Rainy</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; text-align: center; }
-        #game-container { margin-top: 20px; }
-        button { margin: 5px; padding: 10px; }
-        #result, #score, #lives { margin-top: 20px; font-weight: bold; }
-        #kaomoji { font-size: 24px; margin: 20px 0; }
-        .emotion-btn { background-color: #4CAF50; border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 5px; }
-        #game-over, #game-won { display: none; margin-top: 20px; font-size: 24px; color: #ff4500; }
-        #author { font-style: italic; margin-top: 5px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(to bottom, #3498db, #2c3e50);
+            color: #ecf0f1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        #game-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        #kaomoji {
+            font-size: 48px;
+            margin: 20px 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .emotion-btn {
+            background-color: #3498db;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 8px 4px;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        .emotion-btn:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+        #result, #score, #lives, #timer {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        #game-over, #game-won {
+            display: none;
+            margin-top: 20px;
+            font-size: 24px;
+            color: #e74c3c;
+        }
+        #author {
+            font-style: italic;
+            margin-top: 5px;
+        }
+        #rainy-day {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #34495e;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        #progress {
+            width: 0%;
+            height: 100%;
+            background-color: #2ecc71;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        #hint-btn {
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .rain {
+            position: fixed;
+            top: -50px;
+            left: 0;
+            width: 2px;
+            height: 50px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #ffffff 100%);
+            animation: rain linear infinite;
+        }
+        @keyframes rain {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(calc(100vh + 50px));
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Kaomoji</h1>
-    <p id="author">Written by Victor Gold</p>
     <div id="game-container">
+        <h1>These Rainy Days </h1>
+        <p id="author">Written by Victor</p>
+        <div id="rainy-day">(︶︹︺) ☂ ☔</div>
         <p id="kaomoji"></p>
         <div id="buttons"></div>
+        <p id="result"></p>
+        <p id="score"></p>
+        <p id="lives"></p>
+        <p id="timer"></p>
+        <button id="hint-btn" onclick="useHint()">Use Hint (3 left)</button>
+        <div id="progress-bar"><div id="progress"></div></div>
+        <div id="game-over">Game Over! You've run out of lives.</div>
+        <div id="game-won">Congratulations! You've won the game!</div>
     </div>
-    <p id="result"></p>
-    <p id="score"></p>
-    <p id="lives"></p>
-    <div id="game-over">Game Over! You've run out of lives.</div>
-    <div id="game-won">Congratulations! You've won the game!</div>
 
     <script>
         const kaomoji_dict = {
@@ -39,15 +137,24 @@
             "singing": ["ヾ(⌐■_■)ノ♪", "ヘ(^_^ヘ)", "♪┗(＾0＾)┓♪", "♪(┌・。・)┌"],
             "surprised": ["(°o°)", "(⊙_⊙)", "(°ロ°) !", "(⊙⊙)(☉_☉)", "щ(゜ロ゜щ)", "(ﾟﾛﾟ)", "(⊙⊙)(☉_☉)"],
             "love": ["(♡‿♡)", "(๑♡⌓♡๑)", "(♥ω♥*)", "(´∀｀)♡", "( ˘ ³˘)♥", "(◍•ᴗ•◍)❤"],
-            "tired": ["(´-ω-`)", "( ´△｀)", "(￣ω￣)", "(≧ヘ≦　)", "_(:3 」∠)_", "(;-_-)", "( ˘ω˘ )"],
-            "mischievous": ["(・`ω´・)", "ψ(｀∇´)ψ", "(｡•̀ᴗ-)✧", "( ￣▼￣)", "(•̀ᴗ•́)و", "(*≧▽≦)"],
-            "excited": ["\\(^o^)/", "ヽ(^o^)丿", "٩(◕‿◕｡)۶", "ヽ(＾Д＾)ﾉ", "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "\\(★ω★)/"]
+            "sleepy": ["(￣ω￣) zzz", "(∪｡∪)｡｡｡zzz", "( ु⁎ᴗ_ᴗ⁎)ु.｡oO", "(ᴗ˳ᴗ)"],
+            "studying": ["(￣へ￣)", "(⌐■_■)", "φ(．．;)", "( ﾟдﾟ)"],
+            "gaming": ["(╯°□°）╯︵ ┻━┻", "┬──┬◡ﾉ(° -°ﾉ)", "(｀-´)>", "ヽ(^o^)ノ"],
+            "cooking": ["(੭ ･ᴗ･)੭", "(っ˘ڡ˘ς)", "♨o(>_<)o♨", "( ・ω・)o-{{[〃]"],
+            "exercising": ["ᕦ(ò_óˇ)ᕤ", "ᕙ(⇀‸↼‶)ᕗ", "(ﾉ´♡´)ﾉ*♪", "୧༼ಠ益ಠ༽୨"],
+            "rainy day": ["(;﹏;)", "☔(ಥ_ಥ)☔", "(ू˃̣̣̣̣̣̣︿˂̣̣̣̣̣̣ ू)", "(◕︵◕)"],
+            "sneezing": ["(っ⇀⑃↼)っ", "ヾ(≧へ≦)〃", "(;￣ー￣川", "(╯°□°）╯"],
+            "reading": ["(⌐■_■)", "(ノ_<。)", "(-_-;)・・・", "(⊃｡•́‿•̀｡)⊃"]
         };
 
         let currentEmotion;
         let score = 0;
         let questionsAsked = 0;
         let lives = 3;
+        let streak = 0;
+        let hintsLeft = 3;
+        let timer;
+        let timeLeft;
         const totalQuestions = 20;
         const winningScore = 15;
 
@@ -64,12 +171,9 @@
             document.getElementById('kaomoji').textContent = kaomoji;
             document.getElementById('result').textContent = '';
 
-            // Select 3 random incorrect emotions
             const incorrectEmotions = emotions.filter(e => e !== currentEmotion);
             const shuffledIncorrect = incorrectEmotions.sort(() => 0.5 - Math.random());
             const selectedEmotions = [currentEmotion, ...shuffledIncorrect.slice(0, 3)];
-            
-            // Shuffle the selected emotions
             const shuffledEmotions = selectedEmotions.sort(() => 0.5 - Math.random());
 
             const buttonsHtml = shuffledEmotions.map(emotion => 
@@ -77,16 +181,37 @@
             ).join('');
             document.getElementById('buttons').innerHTML = buttonsHtml;
             updateStats();
+            startTimer();
+        }
+
+        function startTimer() {
+            timeLeft = 10;
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = `Time left: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    checkAnswer('');
+                }
+            }, 1000);
         }
 
         function checkAnswer(selectedEmotion) {
+            clearInterval(timer);
             questionsAsked++;
             if (selectedEmotion === currentEmotion) {
                 score++;
-                document.getElementById('result').textContent = 'Correct!';
+                streak++;
+                const bonus = Math.floor(streak / 3);
+                score += bonus;
+                document.getElementById('result').textContent = `Correct! ${bonus > 0 ? `Streak bonus: +${bonus}` : ''}`;
+                // playSound('correct');  // Uncomment if you add sound functionality
             } else {
                 lives--;
+                streak = 0;
                 document.getElementById('result').textContent = `Wrong. It was ${currentEmotion}.`;
+                // playSound('incorrect');  // Uncomment if you add sound functionality
             }
             updateStats();
             setTimeout(startGame, 1500);
@@ -95,9 +220,11 @@
         function updateStats() {
             document.getElementById('score').textContent = `Score: ${score}/${questionsAsked}`;
             document.getElementById('lives').textContent = `Lives: ${'❤️'.repeat(lives)}`;
+            document.getElementById('progress').style.width = `${(questionsAsked / totalQuestions) * 100}%`;
         }
 
         function endGame() {
+            clearInterval(timer);
             document.getElementById('buttons').innerHTML = '';
             document.getElementById('kaomoji').textContent = '';
             if (lives <= 0) {
@@ -105,19 +232,57 @@
             } else if (score >= winningScore) {
                 document.getElementById('game-won').style.display = 'block';
             }
-            document.getElementById('buttons').innerHTML = '<button onclick="resetGame()">Play Again</button>';
+            document.getElementById('buttons').innerHTML = '<button class="emotion-btn" onclick="resetGame()">Play Again</button>';
+            updateHighScore();
         }
 
         function resetGame() {
             score = 0;
             questionsAsked = 0;
             lives = 3;
+            streak = 0;
+            hintsLeft = 3;
             document.getElementById('game-over').style.display = 'none';
             document.getElementById('game-won').style.display = 'none';
+            document.getElementById('hint-btn').textContent = `Use Hint (${hintsLeft} left)`;
             startGame();
         }
 
+        function useHint() {
+            if (hintsLeft > 0) {
+                hintsLeft--;
+                const correctButton = Array.from(document.querySelectorAll('.emotion-btn'))
+                    .find(button => button.textContent === currentEmotion);
+                if (correctButton) {
+                    correctButton.style.backgroundColor = '#e74c3c';
+                }
+                document.getElementById('hint-btn').textContent = `Use Hint (${hintsLeft} left)`;
+            }
+        }
+
+        function updateHighScore() {
+            const highScore = localStorage.getItem('kaomoji-high-score') || 0;
+            if (score > highScore) {
+                localStorage.setItem('kaomoji-high-score', score);
+                alert(`New high score: ${score}!`);
+            }
+        }
+
+        // Create rain effect
+        function createRain() {
+            const rainCount = 50;
+            for (let i = 0; i < rainCount; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'rain';
+                drop.style.left = `${Math.random() * 100}%`;
+                drop.style.animationDuration = `${Math.random() * 1 + 0.5}s`;
+                drop.style.animationDelay = `${Math.random() * 2}s`;
+                document.body.appendChild(drop);
+            }
+        }
+
+        createRain();
         startGame();
     </script>
 </body>
-</html>
+    </html>
